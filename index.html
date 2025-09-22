@@ -1,24 +1,55 @@
 <!DOCTYPE html>
-
 <html>
-<head>
-	<title>COP 4331 Group 7 Contact Website</title>
-	<script type="text/javascript" src="js/md5.js"></script>
-	<script type="text/javascript" src="js/code.js"></script>
-    <link href="css/styles.css" rel="stylesheet">	
-    <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
-</head>
-<body>
+    <head>
+        <title>COP 4331 Group 7 Contact Website</title>
+        <script src="js/code.js"></script>
+        <link href="css/styles.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+    </head>
+    <body>
+        <h1 id="title">Contact Manager</h1>
 
-<h1 id="title">COP 4331 Group 7 Contact Website</h1>
+        <div class="auth-card" id="auth-card">
+            <div class="tabbar">
+                <button class="tab-button active" onclick="switchTab('login')">Log In</button>
+                <button class="tab-button" onclick="switchTab('signup')">Sign Up</button>
+            </div>
 
-<div id="loginDiv">
-	<span id="inner-title">PLEASE LOG IN</span>
-	<input type="text" id="loginName" placeholder="Username" /><br />
-	<input type="password" id="loginPassword" placeholder="Password"/><br />
-	<button type="button" id="loginButton" class="buttons" onclick="doLogin();"> Do It </button>
-	<span id="loginResult"></span>
-</div>
+            <div id="panel-login" class="panel" style="display:block;">
+                <span id="inner-title">PLEASE LOG IN</span>
+                <form onsubmit="event.preventDefault(); doLogin();">
+                    <input type="text" id="loginName" placeholder="Username" required />
+                    <input type="password" id="loginPassword" placeholder="Password" required />
+                    <button type="submit" class="buttons">Log In</button>
+                </form>
+                <span id="loginResult"></span>
+            </div>
 
-</body>
+            <div id="panel-signup" class="panel" style="display:none;">
+                <span id="inner-title">PLEASE SIGN UP</span>
+                <form onsubmit="event.preventDefault(); doSignup();">
+                    <input type="text" id="signupFirstName" placeholder="First Name" required />
+                    <input type="text" id="signupLastName" placeholder="Last Name" required />
+                    <input type="text" id="signupUsername" placeholder="Username" required />
+                    <input type="password" id="signupPassword" placeholder="Password" required />
+                    <button type="submit" class="buttons">Sign Up</button>
+                </form>
+                <span id="signupResult"></span>
+            </div>
+        </div>
+
+        <div id="loggedInDiv" style="display: none"></div>
+
+        <script>
+            function switchTab(name) {
+                const isLogin = name === 'login';
+                document.getElementById('panel-login').style.display  = isLogin ? 'block' : 'none';
+                document.getElementById('panel-signup').style.display = isLogin ? 'none'  : 'block';
+
+                const buttons = document.querySelectorAll('.tab-button');
+                buttons[0].classList.toggle('active', isLogin);
+                buttons[1].classList.toggle('active', !isLogin);
+            }
+        </script>
+    </body>
 </html>

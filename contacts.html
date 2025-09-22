@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>COP 4331 Group 7 - Contact Manager</title>
+        <script src="js/code.js"></script>
+        <link href="css/styles.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Ubuntu" rel="stylesheet">
+        <style>
+            .contact-container {
+                max-width: 1000px;
+                margin: 0 auto;
+                padding: 20px;
+            }
+            .user-info {
+                background: #f8f9fa;
+                padding: 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+            .contact-search-section {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+            }
+            .contact-add-section {
+                background: white;
+                padding: 30px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin-bottom: 20px;
+            }
+            .input-group {
+                margin-bottom: 15px;
+            }
+            .input-group label {
+                display: block;
+                margin-bottom: 5px;
+                font-weight: bold;
+            }
+            .input-group input {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                box-sizing: border-box;
+            }
+            .input-row {
+                display: flex;
+                gap: 15px;
+            }
+            .input-row .input-group {
+                flex: 1;
+            }
+            .contact-results {
+                background: white;
+                padding: 20px;
+                border-radius: 10px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+                margin-top: 20px;
+            }
+            .contact-item {
+                background: #f8f9fa;
+                padding: 20px;
+                margin-bottom: 15px;
+                border-radius: 8px;
+                border-left: 4px solid #007bff;
+                position: relative;
+            }
+            .contact-item h4 {
+                margin: 0 0 10px 0;
+                color: #333;
+                font-size: 18px;
+            }
+            .contact-info {
+                color: #666;
+                margin: 5px 0;
+                font-size: 14px;
+            }
+            .contact-actions {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+            }
+            .contact-actions button {
+                margin-left: 5px;
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+            .buttons {
+                background-color: #007bff;
+                color: white;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                font-size: 16px;
+                margin: 5px;
+            }
+            .buttons:hover {
+                background-color: #0056b3;
+            }
+            .btn-edit {
+                background-color: #28a745;
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+            .btn-edit:hover {
+                background-color: #218838;
+            }
+            .btn-delete {
+                background-color: #dc3545;
+                padding: 5px 10px;
+                font-size: 12px;
+            }
+            .btn-delete:hover {
+                background-color: #c82333;
+            }
+            .logout-btn {
+                background-color: #dc3545;
+            }
+            .logout-btn:hover {
+                background-color: #c82333;
+            }
+            .result-message {
+                padding: 10px;
+                margin: 10px 0;
+                border-radius: 5px;
+            }
+            .success {
+                background-color: #d4edda;
+                color: #155724;
+                border: 1px solid #c3e6cb;
+            }
+            .error {
+                background-color: #f8d7da;
+                color: #721c24;
+                border: 1px solid #f5c6cb;
+            }
+            .edit-modal {
+                display: none;
+                position: fixed;
+                z-index: 1000;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0,0,0,0.4);
+            }
+            .edit-modal-content {
+                background-color: #fefefe;
+                margin: 5% auto;
+                padding: 30px;
+                border-radius: 10px;
+                width: 80%;
+                max-width: 500px;
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            }
+            .close-modal {
+                color: #aaa;
+                float: right;
+                font-size: 28px;
+                font-weight: bold;
+                cursor: pointer;
+            }
+            .close-modal:hover {
+                color: black;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="contact-container">
+            <div class="user-info">
+                <div>
+                    <h2>Welcome, <span id="userDisplayName"></span>!</h2>
+                    <p>Manage your personal contacts</p>
+                </div>
+                <button class="buttons logout-btn" onclick="doLogout();">Logout</button>
+            </div>
+
+            <div class="contact-search-section">
+                <h3>Search Contacts</h3>
+                <div class="input-group">
+                    <label for="searchText">Search by name, phone, or email:</label>
+                    <input type="text" id="searchText" placeholder="Enter search term..." />
+                </div>
+                <button type="button" class="buttons" onclick="searchContacts();">Search</button>
+                <button type="button" class="buttons" onclick="loadAllContacts();" style="background-color: #6c757d;">Load All</button>
+                <div id="contactSearchResult" class="result-message"></div>
+            </div>
+
+            <div class="contact-add-section">
+                <h3>Add New Contact</h3>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="contactFirstName">First Name:</label>
+                        <input type="text" id="contactFirstName" placeholder="First Name" required />
+                    </div>
+                    <div class="input-group">
+                        <label for="contactLastName">Last Name:</label>
+                        <input type="text" id="contactLastName" placeholder="Last Name" required />
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="contactPhone">Phone Number:</label>
+                        <input type="tel" id="contactPhone" placeholder="(555) 123-4567" />
+                    </div>
+                    <div class="input-group">
+                        <label for="contactEmail">Email Address:</label>
+                        <input type="email" id="contactEmail" placeholder="email@example.com" />
+                    </div>
+                </div>
+                <button type="button" class="buttons" onclick="addContact();">Add Contact</button>
+                <div id="contactAddResult" class="result-message"></div>
+            </div>
+
+            <div class="contact-results" id="contactResults" style="display: none;">
+                <h3>Your Contacts</h3>
+                <div id="contactList"></div>
+            </div>
+        </div>
+
+        <!-- Edit Contact Modal -->
+        <div id="editModal" class="edit-modal">
+            <div class="edit-modal-content">
+                <span class="close-modal" onclick="closeEditModal()">&times;</span>
+                <h3>Edit Contact</h3>
+                <input type="hidden" id="editContactId" />
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="editContactFirstName">First Name:</label>
+                        <input type="text" id="editContactFirstName" required />
+                    </div>
+                    <div class="input-group">
+                        <label for="editContactLastName">Last Name:</label>
+                        <input type="text" id="editContactLastName" required />
+                    </div>
+                </div>
+                <div class="input-row">
+                    <div class="input-group">
+                        <label for="editContactPhone">Phone Number:</label>
+                        <input type="tel" id="editContactPhone" />
+                    </div>
+                    <div class="input-group">
+                        <label for="editContactEmail">Email Address:</label>
+                        <input type="email" id="editContactEmail" />
+                    </div>
+                </div>
+                <button type="button" class="buttons" onclick="updateContact();">Update Contact</button>
+                <button type="button" class="buttons" onclick="closeEditModal();" style="background-color: #6c757d;">Cancel</button>
+                <div id="editContactResult" class="result-message"></div>
+            </div>
+        </div>
+
+        <script>
+            let currentContacts = [];
+
+            // Check if user is logged in when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                readCookie();
+                
+                if (userId <= 0) {
+                    // Redirect to login if not logged in
+                    window.location.href = 'index.html';
+                    return;
+                }
+                
+                // Display user name
+                document.getElementById('userDisplayName').textContent = firstName + ' ' + lastName;
+                
+                // Add enter key support for search
+                document.getElementById("searchText").addEventListener("keyup", function(event) {
+                    if (event.keyCode === 13) {
+                        searchContacts();
+                    }
+                });
+
+                // Load all contacts on page load
+                loadAllContacts();
+            });
+
+            function searchContacts() {
+                let search = document.getElementById("searchText").value.trim();
+                
+                if (!search) {
+                    document.getElementById("contactSearchResult").innerHTML = "Please enter a search term.";
+                    document.getElementById("contactSearchResult").className = "result-message error";
+                    return;
+                }
+                
+                document.getElementById("contactSearchResult").innerHTML = "Searching...";
+                document.getElementById("contactSearchResult").className = "result-message";
+                document.getElementById("contactList").innerHTML = "";
+                
+                let jsonPayload = '{"search" : "' + search + '", "userId" : ' + userId + '}';
+                let url = urlBase + '/searchContacts.' + extension;
+                
+                let xhr = new XMLHttpRequest();
+                xhr.open("POST", url, true);
+                xhr.setRequestHeader("Content-type", "application/json; charset=UTF-8");
+                
+                try {
+                    xhr.onreadystatechange = function() {
+                        if (this.readyState == 4) {
+                            if (this.status == 200) {
+                                try {
+                                    let jsonObject = JSON.parse(xhr.responseText);
+                                    
+                                    if (jsonObject.error && jsonObject.error !== "") {
+                                        document.getElementById("contactSearchResult").innerHTML = jsonObject.error;
+                                        document.getElementById("contactSearchResult").className = "result-message error";
+                                        document.getElementById("contactResults").style.display = "none";
+                                        return;
+                                    }
+                                    
+                                    if (jsonObject.results && jsonObject.results.length > 0) {
+                                        currentContacts = jsonObject.results;
+                                        displayContacts(jsonObject.results);
+                                        document.getElementById("contactSearchResult").innerHTML = "Found " + jsonObject.results.length + " contact(s)";
+                                        document.getElementById("contactSearchResult").className = "result-message success";
+                                    } else {
+                                        document.getElementById("contactSearchResult").innerHTML = "No contacts found matching '" + search + "'";
+                                        document.getElementById("contactSearchResult").className = "result-message error";
+                                        document.getElementById("contactResults").style.display = "none";
+                                    }
+                                } catch (parseError) {
+                                    document.getElementById("contactSearchResult").innerHTML = "Search response error. Please try again.";
+                                    document.getElementById("contactSearchResult").className = "result-message error";
+                                    console.error("JSON parse error:", parseError);
+                                    console.log("Raw response:", xhr.responseText);
+                                }
+                            } else {
+                                document.getElementById("contactSearchResult").innerHTML = "Server error. Please try again.";
+                                document.getElementById("contactSearchResult").className = "result-message error";
+                            }
+                        }
+                    };
+                    xhr.send(jsonPayload);
+                } catch (err) {
+                    document.getElementById("contactSearchResult").innerHTML = "Network error: " + err.message;
+                    document.getElementById("contactSearchResult").className = "result-message error";
+                }
+            }
+
+            function loadAllContacts() {
+                document.getElementById("contactSearchResult").innerHTML = "Loading all contacts...";
+                document.getElementById("contactSearchResult").className = "result-message";
+                document.getElementById("contactList").innerHTML = "";
+                document.getElementById("searchText").value = "";
+                
+                let jsonPayload = '{"search" : "", "userId" : ' + userId + '}';
+                let url = urlBase + '/searchContacts.' + extension;
+                
+                let xhr = new XMLHttpRequest();
+                xhr.open("POST", url, true);
+                xhr.setRequestHeader("Content-type", "application/json; charset=UTF-8");
+                
+                try {
+                    xhr.onreadystatechange = function() {
+                        if (this.readyState == 4) {
+                            if (this.status == 200) {
+                                try {
+                                    let jsonObject = JSON.parse(xhr.responseText);
+                                    
+                                    if (jsonObject.error && jsonObject.error !== "" && !jsonObject.error.includes("No Records Found")) {
+                                        document.getElementById("contactSearchResult").innerHTML = jsonObject.error;
+                                        document.getElementById("contactSearchResult").className = "result-message error";
+                                        return;
+                                    }
+                                    
+                                    if (jsonObject.results && jsonObject.results.length > 0) {
+                                        currentContacts = jsonObject.results;
+                                        displayContacts(jsonObject.results);
+                                        document.getElementById("contactSearchResult").innerHTML = "Showing all " + jsonObject.results.length + " contact(s)";
+                                        document.getElementById("contactSearchResult").className = "result-message success";
+                                    } else {
+                                        document.getElementById("contactSearchResult").innerHTML = "You don't have any contacts yet. Add some contacts below!";
+                                        document.getElementById("contactSearchResult").className = "result-message error";
+                                        document.getElementById("contactResults").style.display = "none";
+                                    }
+                                } catch (parseError) {
+                                    document.getElementById("contactSearchResult").innerHTML = "Load contacts response error. Please try again.";
+                                    document.getElementById("contactSearchResult").className = "result-message error";
+                                    console.error("JSON parse error:", parseError);
+                                }
+                            } else {
+                                document.getElementById("contactSearchResult").innerHTML = "Server error. Please try again.";
+                                document.getElementById("contactSearchResult").className = "result-message error";
+                            }
+                        }
+                    };
+                    xhr.send(jsonPayload);
+                } catch (err) {
+                    document.getElementById("contactSearchResult").innerHTML = "Network error: " + err.message;
+                    document.getElementById("contactSearchResult").className = "result-message error";
+                }
+            }
+
+            function displayContacts(contacts) {
+                let contactList = "";
+                for (let i = 0; i < contacts.length; i++) {
+                    let contact = contacts[i];
+                    contactList += '<div class="contact-item">';
+                    contactList += '<div class="contact-actions">';
+                    contactList += '<button class="buttons btn-edit" onclick="openEditModal(' + i + ')">Edit</button>';
+                    contactList += '<button class="buttons btn-delete" onclick="deleteContact(' + (contact.id || contact.ID || i) + ')">Delete</button>';
+                    contactList += '</div>';
+                    contactList += '<h4>' + (contact.firstName || contact.FirstName || '') + ' ' + (contact.lastName || contact.LastName || '') + '</h4>';
+                    if (contact.phone || contact.Phone) {
+                        contactList += '<div class="contact-info">📞 ' + (contact.phone || contact.Phone) + '</div>';
+                    }
+                    if (contact.email || contact.Email) {
+                        contactList += '<div class="contact-info">✉️ ' + (contact.email || contact.Email) + '</div>';
+                    }
+                    contactList += '</div>';
+                }
+                document.getElementById("contactList").innerHTML = contactList;
+                document.getElementById("contactResults").style.display = "block";
+            }
+
+            function openEditModal(index) {
+                let contact = currentContacts[index];
+                
+                document.getElementById("editContactId").value = contact.id || contact.ID || index;
+                document.getElementById("editContactFirstName").value = contact.firstName || contact.FirstName || '';
+                document.getElementById("editContactLastName").value = contact.lastName || contact.LastName || '';
+                document.getElementById("editContactPhone").value = contact.phone || contact.Phone || '';
+                document.getElementById("editContactEmail").value = contact.email || contact.Email || '';
+                document.getElementById("editContactResult").innerHTML = '';
+                
+                document.getElementById("editModal").style.display = "block";
+            }
+
+            function closeEditModal() {
+                document.getElementById("editModal").style.display = "none";
+            }
+
+            // Override the logout function to redirect properly
+            function doLogout() {
+                userId = 0;
+                firstName = "";
+                lastName = "";
+                document.cookie = "firstName= ; expires = Thu, 01 Jan 1970 00:00:00 GMT";
+                
+                // Redirect to login page
+                window.location.href = 'index.html';
+            }
+
+            // Close modal when clicking outside
+            window.onclick = function(event) {
+                let modal = document.getElementById("editModal");
+                if (event.target == modal) {
+                    modal.style.display = "none";
+                }
+            }
+        </script>
+    </body>
+</html>
