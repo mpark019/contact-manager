@@ -251,7 +251,7 @@
                         <input type="email" id="editContactEmail" />
                     </div>
                 </div>
-                <button type="button" class="buttons" onclick="updateContact();">Update Contact</button>
+                <button type="button" class="buttons" onclick="editContact();">Update Contact</button>
                 <button type="button" class="buttons" onclick="closeEditModal();" style="background-color: #6c757d;">Cancel</button>
                 <div id="editContactResult" class="result-message"></div>
             </div>
@@ -264,8 +264,10 @@
             document.addEventListener('DOMContentLoaded', function() {
                 readCookie();
                 
-                if (userId <= 0) {
-                    // Redirect to login if not logged in
+                console.log('Current userID:', userID);
+                
+                if (userID <= 0) {
+                    alert('You must be logged in to view contacts. Redirecting to login page.');
                     window.location.href = 'index.html';
                     return;
                 }
@@ -297,7 +299,7 @@
                 document.getElementById("contactSearchResult").className = "result-message";
                 document.getElementById("contactList").innerHTML = "";
                 
-                let jsonPayload = '{"search" : "' + search + '", "userId" : ' + userId + '}';
+                let jsonPayload = '{"search" : "' + search + '", "userID" : ' + userID + '}';
                 let url = urlBase + '/searchContacts.' + extension;
                 
                 let xhr = new XMLHttpRequest();
@@ -353,7 +355,7 @@
                 document.getElementById("contactList").innerHTML = "";
                 document.getElementById("searchText").value = "";
                 
-                let jsonPayload = '{"search" : "", "userId" : ' + userId + '}';
+                let jsonPayload = '{"search" : "", "userID" : ' + userID + '}';
                 let url = urlBase + '/searchContacts.' + extension;
                 
                 let xhr = new XMLHttpRequest();
@@ -438,17 +440,6 @@
 
             function closeEditModal() {
                 document.getElementById("editModal").style.display = "none";
-            }
-
-            // Override the logout function to redirect properly
-            function doLogout() {
-                userId = 0;
-                firstName = "";
-                lastName = "";
-                document.cookie = "firstName= ; expires = Thu, 01 Jan 1970 00:00:00 GMT";
-                
-                // Redirect to login page
-                window.location.href = 'index.html';
             }
 
             // Close modal when clicking outside

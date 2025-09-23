@@ -1,12 +1,12 @@
 const urlBase = 'https://renblas.dev/LAMPAPI';
 const extension = 'php';
 
-let userId = 0;
+let userID = 0;
 let firstName = "";
 let lastName = "";
 
 function doLogin() {
-    userId = 0;
+    userID = 0;
     firstName = "";
     lastName = "";
     
@@ -33,7 +33,7 @@ function doLogin() {
                             document.getElementById("loginResult").innerHTML = jsonObject.error;
                             document.getElementById("loginResult").style.color = "red";
                         } else {
-                            userId = jsonObject.id;
+                            userID = jsonObject.id;
                             firstName = jsonObject.firstName;
                             lastName = jsonObject.lastName;
                             
@@ -42,7 +42,8 @@ function doLogin() {
                             document.getElementById("loginName").value = "";
                             document.getElementById("loginPassword").value = "";
                             
-                            hideLoginDiv();
+			    window.location.replace("contacts.html");	
+                            //hideLoginDiv();
                         }
                     } catch (parseError) {
                         document.getElementById("loginResult").innerHTML = "Login response error. Please try again.";
@@ -94,7 +95,6 @@ function doSignup() {
                     try {
                         let jsonObject = JSON.parse(xhr.responseText);
                         
-                        // Your backend returns success messages as "error" field
                         if (jsonObject.error) {
                             if (jsonObject.error.includes("Signup successful") || jsonObject.error.includes("successful")) {
                                 document.getElementById("signupResult").innerHTML = "Account created successfully! You can now log in.";
@@ -117,7 +117,6 @@ function doSignup() {
                                 document.getElementById("signupResult").style.color = "red";
                             }
                         } else {
-                            // If no error field, assume success
                             document.getElementById("signupResult").innerHTML = "Account created successfully! You can now log in.";
                             document.getElementById("signupResult").style.color = "green";
                             
@@ -154,10 +153,10 @@ function doSignup() {
 }
 
 function addContact() {
-    let contactFirstName = document.getElementById("contactFirstName").value;
-    let contactLastName = document.getElementById("contactLastName").value;
-    let contactPhone = document.getElementById("contactPhone").value;
-    let contactEmail = document.getElementById("contactEmail").value;
+    let contactFirstName = document.getElementById("contactFirstName").value.trim();
+    let contactLastName = document.getElementById("contactLastName").value.trim();
+    let contactPhone = document.getElementById("contactPhone").value.trim();
+    let contactEmail = document.getElementById("contactEmail").value.trim();
     
     document.getElementById("contactAddResult").innerHTML = "";
     
@@ -170,8 +169,11 @@ function addContact() {
     document.getElementById("contactAddResult").innerHTML = "Adding contact...";
     document.getElementById("contactAddResult").className = "result-message";
     
-    let jsonPayload = '{"firstName" : "' + contactFirstName + '", "lastName" : "' + contactLastName + '", "phone" : "' + contactPhone + '", "email" : "' + contactEmail + '", "userId" : ' + userId + '}';
+    let jsonPayload = '{"firstName" : "' + contactFirstName + '", "lastName" : "' + contactLastName + '", "phone" : "' + contactPhone + '", "email" : "' + contactEmail + '", "userID" : ' + userID + '}';
     let url = urlBase + '/addContact.' + extension;
+    
+    console.log("Adding contact with payload:", jsonPayload);
+    console.log("URL:", url);
     
     let xhr = new XMLHttpRequest();
     xhr.open("POST", url, true);
@@ -180,16 +182,12 @@ function addContact() {
     try {
         xhr.onreadystatechange = function() {
             if (this.readyState == 4) {
+                console.log("Add contact response status:", this.status);
+                console.log("Add contact response text:", xhr.responseText);
+                
                 if (this.status == 200) {
-                    try {
-                        let jsonObject = JSON.parse(xhr.responseText);
-                        
-                        if (jsonObject.error && jsonObject.error !== "") {
-                            document.getElementById("contactAddResult").innerHTML = jsonObject.error;
-                            document.getElementById("contactAddResult").className = "result-message error";
-                            return;
-                        }
-                        
+                    // Handle successful response or empty response
+                    if (!xhr.responseText || xhr.responseText.trim() === '') {
                         document.getElementById("contactAddResult").innerHTML = "Contact added successfully!";
                         document.getElementById("contactAddResult").className = "result-message success";
                         
@@ -203,13 +201,46 @@ function addContact() {
                         if (typeof loadAllContacts === 'function') {
                             setTimeout(loadAllContacts, 1000);
                         }
+                        return;
+                    }
+                    
+                    try {
+                        let jsonObject = JSON.parse(xhr.responseText);
+                        
+                        if (jsonObject.error === "") {
+                            document.getElementById("contactAddResult").innerHTML = "Contact added successfully!";
+                            document.getElementById("contactAddResult").className = "result-message success";
+                            
+                            // Clear form
+                            document.getElementById("contactFirstName").value = "";
+                            document.getElementById("contactLastName").value = "";
+                            document.getElementById("contactPhone").value = "";
+                            document.getElementById("contactEmail").value = "";
+                            
+                            // Refresh contact list if visible
+                            if (typeof loadAllContacts === 'function') {
+                                setTimeout(loadAllContacts, 1000);
+                            }
+                        } else {
+                            document.getElementById("contactAddResult").innerHTML = jsonObject.error;
+                            document.getElementById("contactAddResult").className = "result-message error";
+                        }
                     } catch (parseError) {
-                        document.getElementById("contactAddResult").innerHTML = "Add contact response error. Please try again.";
-                        document.getElementById("contactAddResult").className = "result-message error";
-                        console.error("JSON parse error:", parseError);
+                        // If JSON parsing fails, but we got a 200 response, assume success
+                        document.getElementById("contactAddResult").innerHTML = "Contact added successfully!";
+                        document.getElementById("contactAddResult").className = "result-message success";
+                        
+                        // Clear form
+                        document.getElementById("contactFirstName").value = "";
+                        document.getElementById("contactLastName").value = "";
+                        document.getElementById("contactPhone").value = "";
+                        document.getElementById("contactEmail").value = "";
+                        
+                        console.log("JSON parse failed, but assuming success due to 200 status");
+                        console.log("Raw response:", xhr.responseText);
                     }
                 } else {
-                    document.getElementById("contactAddResult").innerHTML = "Server error. Please try again.";
+                    document.getElementById("contactAddResult").innerHTML = "Server error (Status " + this.status + "). Please try again.";
                     document.getElementById("contactAddResult").className = "result-message error";
                 }
             }
@@ -221,74 +252,15 @@ function addContact() {
     }
 }
 
-function searchContacts() {
-    let search = document.getElementById("searchText").value;
-    
-    document.getElementById("contactSearchResult").innerHTML = "";
-    document.getElementById("contactList").innerHTML = "";
-    
-    let jsonPayload = '{"search" : "' + search + '", "userId" : ' + userId + '}';
-    let url = urlBase + '/searchContacts.' + extension;
-    
-    let xhr = new XMLHttpRequest();
-    xhr.open("POST", url, true);
-    xhr.setRequestHeader("Content-type", "application/json; charset=UTF-8");
-    
-    try {
-        xhr.onreadystatechange = function() {
-            if (this.readyState == 4) {
-                if (this.status == 200) {
-                    try {
-                        let jsonObject = JSON.parse(xhr.responseText);
-                        
-                        if (jsonObject.error && jsonObject.error !== "") {
-                            document.getElementById("contactSearchResult").innerHTML = jsonObject.error;
-                            document.getElementById("contactSearchResult").className = "result-message error";
-                            return;
-                        }
-                        
-                        let contactList = "";
-                        if (jsonObject.results && jsonObject.results.length > 0) {
-                            for (let i = 0; i < jsonObject.results.length; i++) {
-                                let contact = jsonObject.results[i];
-                                contactList += '<div class="contact-item">';
-                                contactList += '<h3>' + contact.firstName + ' ' + contact.lastName + '</h3>';
-                                if (contact.phone) contactList += '<div class="contact-info">Phone: ' + contact.phone + '</div>';
-                                if (contact.email) contactList += '<div class="contact-info">Email: ' + contact.email + '</div>';
-                                contactList += '</div>';
-                            }
-                            document.getElementById("contactList").innerHTML = contactList;
-                        } else {
-                            document.getElementById("contactSearchResult").innerHTML = "No contacts found";
-                            document.getElementById("contactSearchResult").className = "result-message error";
-                        }
-                    } catch (parseError) {
-                        document.getElementById("contactSearchResult").innerHTML = "Search response error. Please try again.";
-                        document.getElementById("contactSearchResult").className = "result-message error";
-                        console.error("JSON parse error:", parseError);
-                    }
-                } else {
-                    document.getElementById("contactSearchResult").innerHTML = "Server error. Please try again.";
-                    document.getElementById("contactSearchResult").className = "result-message error";
-                }
-            }
-        };
-        xhr.send(jsonPayload);
-    } catch (err) {
-        document.getElementById("contactSearchResult").innerHTML = "Network error: " + err.message;
-        document.getElementById("contactSearchResult").className = "result-message error";
-    }
-}
-
 function saveCookie() {
     let minutes = 20;
     let date = new Date();
     date.setTime(date.getTime() + (minutes * 60 * 1000));
-    document.cookie = "firstName=" + firstName + ",lastName=" + lastName + ",userId=" + userId + ";expires=" + date.toGMTString();
+    document.cookie = "firstName=" + firstName + ",lastName=" + lastName + ",userID=" + userID + ";expires=" + date.toGMTString();
 }
 
 function readCookie() {
-    userId = -1;
+    userID = -1;
     let data = document.cookie;
     let splits = data.split(",");
     for (var i = 0; i < splits.length; i++) {
@@ -298,44 +270,58 @@ function readCookie() {
             firstName = tokens[1];
         } else if (tokens[0] == "lastName") {
             lastName = tokens[1];
-        } else if (tokens[0] == "userId") {
-            userId = parseInt(tokens[1].trim());
+        } else if (tokens[0] == "userID") {
+            userID = parseInt(tokens[1].trim());
         }
     }
     
-    if (userId < 0) {
-        document.getElementById("loggedInDiv").style.display = "none";
-        document.getElementById("auth-card").style.display = "block";
+    if (userID < 0) {
+        // Only try to hide login div if elements exist (on login page)
+        let loggedInDiv = document.getElementById("loggedInDiv");
+        let authCard = document.getElementById("auth-card");
+        
+        if (loggedInDiv) loggedInDiv.style.display = "none";
+        if (authCard) authCard.style.display = "block";
     } else {
         hideLoginDiv();
     }
 }
 
 function doLogout() {
-    userId = 0;
+    userID = 0;
     firstName = "";
     lastName = "";
     document.cookie = "firstName= ; expires = Thu, 01 Jan 1970 00:00:00 GMT";
     
-    document.getElementById("loggedInDiv").style.display = "none";
-    document.getElementById("auth-card").style.display = "block";
-    
-    // Switch back to login tab
-    switchTab('login');
+    // Redirect to login page regardless of current page
+    window.location.href = 'index.html';
 }
 
 function hideLoginDiv() {
-    document.getElementById("auth-card").style.display = "none";
-    document.getElementById("loggedInDiv").style.display = "block";
-    document.getElementById("loggedInDiv").innerHTML = `
-        <div style="text-align: center; padding: 20px;">
-            <h2>Welcome, ${firstName} ${lastName}!</h2>
-            <p>You are successfully logged in.</p>
-            <button onclick="doLogout()" style="margin: 10px; padding: 10px 20px;">Logout</button>
-            <br><br>
-            <a href="contacts.html" style="color: #007bff; text-decoration: none; font-size: 18px;">Go to Contact Manager →</a>
-        </div>
-    `;
+    // Check which page we're on and handle accordingly
+    let authCard = document.getElementById("auth-card");
+    let loggedInDiv = document.getElementById("loggedInDiv");
+    
+    if (authCard && loggedInDiv) {
+        // We're on the login page (index.html)
+        authCard.style.display = "none";
+        loggedInDiv.style.display = "block";
+        loggedInDiv.innerHTML = `
+            <div style="text-align: center; padding: 20px;">
+                <h2>Welcome, ${firstName} ${lastName}!</h2>
+                <p>You are successfully logged in.</p>
+                <button onclick="doLogout()" style="margin: 10px; padding: 10px 20px;">Logout</button>
+                <br><br>
+                <a href="contacts.html" style="color: #007bff; text-decoration: none; font-size: 18px;">Go to Contact Manager →</a>
+            </div>
+        `;
+    } else {
+        // We're on contacts page or another page - just update user display if it exists
+        let userDisplay = document.getElementById('userDisplayName');
+        if (userDisplay) {
+            userDisplay.textContent = firstName + ' ' + lastName;
+        }
+    }
 }
 
 // Add enter key support and initialize
@@ -345,7 +331,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Check for existing login
     readCookie();
     
-    // Login form enter key support
+    // Login form enter key support (only if login page)
     const loginPassword = document.getElementById("loginPassword");
     if (loginPassword) {
         loginPassword.addEventListener("keyup", function(event) {
@@ -355,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Signup form enter key support  
+    // Signup form enter key support (only if login page)
     const signupPassword = document.getElementById("signupPassword");
     if (signupPassword) {
         signupPassword.addEventListener("keyup", function(event) {
